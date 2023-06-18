@@ -51,7 +51,6 @@ generate_file() {
         echo "  ProxyJump "$tag"_bastion" >> $ssh_config_file
         echo "[HAproxy]" >> $hosts_file
         echo ""$tag"_HAproxy">> $hosts_file
-        echo ""$tag"_HAproxy2">> $hosts_file
         echo " " >> $hosts_file
     fi
 
