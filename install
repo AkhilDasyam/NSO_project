@@ -1,0 +1,25 @@
+#!/bin/bash
+current_date_time=$(date)
+rc_file=$1
+tag_name=$2
+publickey=$3
+required_dev_servers=3
+
+echo "$current_date_time Starting deployment of $tag_name using $rc_file for credentials."
+source $rc_file
+
+# Define variables
+network_name="$2_network"
+subnet_name="$2_subnet"
+keypair_name="$2_key"
+router_name="$2_router"
+security_group_name="$2_security_group"
+haproxy_server="$2_HAproxy"
+haproxy_server2="$2_HAproxy2"
+bastion_server="$2_bastion"
+dev_server="$2_dev"
+vip_port="$2_vip" #virtual ip port
+sshconfig="config"
+knownhosts="known_hosts"
+hostsfile="hosts"
+
