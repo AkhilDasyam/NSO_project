@@ -104,6 +104,30 @@ else
   echo "$(date) No subnet $subnet_name to remove"
 fi
 
+# remove_ext_gateway=$(openstack router unset --external-gateway $existing_routers) 
 
+# Delete router
+
+routers=$(openstack router list --tag $tag_name -f value -c Name)
+if [ -n "$routers" ]; then
+  for r in $routers; do
+    openstack router delete "$r"
+  done
+  echo "$(date) Deleted router $router_name"
+else
+  echo "$(date) No router $router_name to remove"
+fi
+
+
+# Delete network
+networks=$(openstack network list --tag $tag_name -f value -c Name)
+if [ -n "$networks" ]; then
+  for net in $networks; do
+    openstack network delete "$net"
+  done
+  echo "$(date) Deleted network $network_name"
+else
+  echo "$(date) No network $network_name to remove"
+fi
 
 
