@@ -84,6 +84,25 @@ for ip in $unassigned_ips; do
     openstack floating ip unset --port "$ip"
     echo "$(date) Unset floating IP $ip from port"
 done
+# Delete virtual port
+openstack port delete "$vip_port"
+echo "$(date) Deleted virtual port $vip_port"
+
+
+# Disconnect subnet & remove subnet
+
+# subnet_id=$(openstack router show "$router_name" -f json -c interfaces_info | grep -oP '(?<="subnet_id": ")[^"]+' | awk '{print $1}')
+
+subnet_id=$(openstack subnet list --tag "$tag_name" -c ID -f value)
+if [ -n "$subnet_id" ]; then
+  for sub in $subnet_id; do
+    openstack router remove subnet "$router_name" "$sub"
+    openstack subnet delete "$sub"
+  done
+  echo "$(date) Deleted subnet $subnet_name"
+else
+  echo "$(date) No subnet $subnet_name to remove"
+fi
 
 
 
