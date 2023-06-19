@@ -183,4 +183,5 @@ do
         exit 1
     fi
     create/delete_dev_servers $req_number
+    sleep 30
 done
