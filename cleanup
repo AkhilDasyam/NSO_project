@@ -25,6 +25,7 @@ sshconfig="config"
 knownhosts="known_hosts"
 hostsfile="hosts"
 fip2="$(cat floating_ip2)"
+
 # Get the list of servers matching the keyword
 servers=$(openstack server list --name "$tag_name" -c ID -f value)
 n=$(echo "$servers" | wc -l)
@@ -84,6 +85,7 @@ for ip in $unassigned_ips; do
     openstack floating ip unset --port "$ip"
     echo "$(date) Unset floating IP $ip from port"
 done
+
 # Delete virtual port
 openstack port delete "$vip_port"
 echo "$(date) Deleted virtual port $vip_port"
@@ -160,8 +162,8 @@ fi
 if [[ -f "$hostsfile" ]] ; then
     rm "$hostsfile"
 fi
+
 if [[ -f "vipaddr" ]] ; then
   rm "vipaddr"
 
 fi
-
