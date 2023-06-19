@@ -25,4 +25,18 @@ sshconfig="config"
 knownhosts="known_hosts"
 hostsfile="hosts"
 fip2="$(cat floating_ip2)"
+# Get the list of servers matching the keyword
+servers=$(openstack server list --name "$tag_name" -c ID -f value)
+n=$(echo "$servers" | wc -l)
+# Loop through each server and delete it
+if [ -n "$servers" ]; then
+  echo "$(date) Found $n server(s), deleting them"
+  for server_id in $servers; do
+    openstack server delete $server_id
+  done
+  echo "$(date) Deleted servers"
+else
+  echo "$(date) No servers exist to delete"
+fi
+
 
