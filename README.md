@@ -28,3 +28,14 @@ deleting servers, subnets, networks, key pairs, ports, and
 any other network elements created in the cloud platform.
 The clean-up mode ensures a clean state by removing all
 infrastructure components.
+
+# Requirements for :
+Webservers host:
+python flask application "service.py" running on port 5000.
+SNMP application running on port 6000.
+Node_exporter running on 9100
+Bastion Host:
+prometheus running on port 9090.
+Grafana running on port 3000.
+Proxy host:
+HAproxy on port 5000
