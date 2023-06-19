@@ -29,7 +29,7 @@ any other network elements created in the cloud platform.
 The clean-up mode ensures a clean state by removing all
 infrastructure components.
 
-# Requirements for :
+# Services :
 Webservers host:
 python flask application "service.py" running on port 5000.
 SNMP application running on port 6000.
