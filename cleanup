@@ -39,4 +39,18 @@ else
   echo "$(date) No servers exist to delete"
 fi
 
+# delete keypair 
+
+# keypairs=$(openstack keypair list -f value -c Name)
+keypairs=$(openstack keypair list -f value -c Name | grep "$tag_name.*")
+# echo "$keypairs"
+
+if [ -n "$keypairs" ]; then
+  for key in $keypairs; do    #deletes all keypairs with same tag
+    openstack keypair delete $key
+  done
+  echo "$(date) Deleted keypair $keypair_name"
+else
+  echo "$(date) No $keypair_name exist to delete"
+fi
 
