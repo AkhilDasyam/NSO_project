@@ -29,7 +29,7 @@ generate_file() {
     echo "Host "$tag"_bastion" >> $ssh_config_file
     echo "   User ubuntu" >> $ssh_config_file
     echo "   HostName $bastionfip" >> $ssh_config_file
-    echo "   IdentityFile ~/.ssh/id_rsa" >> $ssh_config_file
+    echo "   IdentityFile "$PWD"/id_rsa" >> $ssh_config_file
     echo "   StrictHostKeyChecking no" >> $ssh_config_file
     echo "   PasswordAuthentication no" >> $ssh_config_file
     echo "[bastion]" >> $hosts_file
@@ -45,7 +45,7 @@ generate_file() {
         echo "Host "$tag"_HAproxy" >> $ssh_config_file
         echo "  HostName $haproxy_ip_1" >> $ssh_config_file
         echo "  User ubuntu" >> $ssh_config_file
-        echo "  IdentityFile ~/.ssh/id_rsa" >> $ssh_config_file
+        echo "  IdentityFile "$PWD"/id_rsa" >> $ssh_config_file
         echo "  StrictHostKeyChecking no" >> $ssh_config_file
         echo "  PasswordAuthentication no" >> $ssh_config_file
         echo "  ProxyJump "$tag"_bastion" >> $ssh_config_file
@@ -64,7 +64,7 @@ generate_file() {
         echo "Host "$tag"_HAproxy2" >> $ssh_config_file
         echo "  HostName $haproxy_ip_2" >> $ssh_config_file
         echo "  User ubuntu" >> $ssh_config_file
-        echo "  IdentityFile ~/.ssh/id_rsa" >> $ssh_config_file
+        echo "  IdentityFile "$PWD"/id_rsa" >> $ssh_config_file
         echo "  StrictHostKeyChecking no" >> $ssh_config_file
         echo "  PasswordAuthentication no" >> $ssh_config_file
         echo "  ProxyJump "$tag"_bastion" >> $ssh_config_file
@@ -92,7 +92,7 @@ generate_file() {
         echo "Host $server_name" >> $ssh_config_file
         echo "  HostName $server_ip" >> $ssh_config_file
         echo "  User ubuntu" >> $ssh_config_file
-        echo "  IdentityFile ~/.ssh/id_rsa" >> $ssh_config_file
+        echo "  IdentityFile "$PWD"/id_rsa" >> $ssh_config_file
         echo "  UserKnownHostsFile=~/dev/null" >> $ssh_config_file
         echo "  StrictHostKeyChecking no" >> $ssh_config_file
         echo "  PasswordAuthentication no" >> $ssh_config_file
@@ -104,7 +104,7 @@ generate_file() {
     echo " " >> $hosts_file
     echo "[all:vars]" >> $hosts_file
     echo "ansible_user=ubuntu" >> $hosts_file
-    echo "ansible_ssh_private_key_file = ~/.ssh/id_rsa" >> $hosts_file
+    echo "ansible_ssh_private_key_file = "$PWD"/id_rsa" >> $hosts_file
     echo "ansible_ssh_common_args=' -F $ssh_config_file '" >> $hosts_file
    # echo -n "ansible_python_interpreter=/usr/bin/python3" >> $hosts_file
     chmod 600 $ssh_config_file
