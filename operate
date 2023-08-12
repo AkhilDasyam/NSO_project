@@ -29,7 +29,7 @@ generate_file() {
     echo "Host "$tag"_bastion" >> $ssh_config_file
     echo "   User ubuntu" >> $ssh_config_file
     echo "   HostName $bastionfip" >> $ssh_config_file
-    echo "   IdentityFile "$PWD"/id_rsa" >> $ssh_config_file
+    echo "   IdentityFile $PWD/$privatekey" >> $ssh_config_file
     echo "   StrictHostKeyChecking no" >> $ssh_config_file
     echo "   PasswordAuthentication no" >> $ssh_config_file
     echo "[bastion]" >> $hosts_file
@@ -45,7 +45,7 @@ generate_file() {
         echo "Host "$tag"_HAproxy" >> $ssh_config_file
         echo "  HostName $haproxy_ip_1" >> $ssh_config_file
         echo "  User ubuntu" >> $ssh_config_file
-        echo "  IdentityFile "$PWD"/id_rsa" >> $ssh_config_file
+       echo "   IdentityFile $PWD/$privatekey" >> $ssh_config_file
         echo "  StrictHostKeyChecking no" >> $ssh_config_file
         echo "  PasswordAuthentication no" >> $ssh_config_file
         echo "  ProxyJump "$tag"_bastion" >> $ssh_config_file
@@ -64,7 +64,7 @@ generate_file() {
         echo "Host "$tag"_HAproxy2" >> $ssh_config_file
         echo "  HostName $haproxy_ip_2" >> $ssh_config_file
         echo "  User ubuntu" >> $ssh_config_file
-        echo "  IdentityFile "$PWD"/id_rsa" >> $ssh_config_file
+        echo "   IdentityFile $PWD/$privatekey" >> $ssh_config_file
         echo "  StrictHostKeyChecking no" >> $ssh_config_file
         echo "  PasswordAuthentication no" >> $ssh_config_file
         echo "  ProxyJump "$tag"_bastion" >> $ssh_config_file
@@ -81,7 +81,7 @@ generate_file() {
      echo " " >> $hosts_file
     echo "[webservers]">> $hosts_file
 
-    server_names=$(openstack server list -f value -c Name | grep -E ""$tag"_dev*")
+    server_names=$(openstack server list --status ACTIVE -f value -c Name | grep -E ""$tag"_dev*")
 
 
     echo "$server_names" | while IFS= read -r server_name; do
@@ -92,7 +92,7 @@ generate_file() {
         echo "Host $server_name" >> $ssh_config_file
         echo "  HostName $server_ip" >> $ssh_config_file
         echo "  User ubuntu" >> $ssh_config_file
-        echo "  IdentityFile "$PWD"/id_rsa" >> $ssh_config_file
+        echo "  IdentityFile $PWD/$privatekey" >> $ssh_config_file
         echo "  UserKnownHostsFile=~/dev/null" >> $ssh_config_file
         echo "  StrictHostKeyChecking no" >> $ssh_config_file
         echo "  PasswordAuthentication no" >> $ssh_config_file
@@ -104,7 +104,7 @@ generate_file() {
     echo " " >> $hosts_file
     echo "[all:vars]" >> $hosts_file
     echo "ansible_user=ubuntu" >> $hosts_file
-    echo "ansible_ssh_private_key_file = "$PWD"/id_rsa" >> $hosts_file
+    echo "ansible_ssh_private_key_file = $PWD/$privatekey" >> $hosts_file
     echo "ansible_ssh_common_args=' -F $ssh_config_file '" >> $hosts_file
    # echo -n "ansible_python_interpreter=/usr/bin/python3" >> $hosts_file
     chmod 600 $ssh_config_file
@@ -124,7 +124,7 @@ create/delete_dev_servers() {
         no=1
         for i in $(seq 1 $add)
         do
-            check_servers_list1=$(openstack server list --status ACTIVE -f value -c Name 2> /dev/null)
+            check_servers_list1=$(openstack server list -f value -c Name 2> /dev/null)
             name=${tag}_dev$no
             while [ $(grep -ocP "${tag}"_dev$no <<< $check_servers_list1 ) -ne 0  ]
             do
@@ -134,8 +134,9 @@ create/delete_dev_servers() {
                     break
                 fi
             done
-            create_server_output=$(openstack server create --image "Ubuntu 20.04 Focal Fossa 20200423"  $name --key-name "$tag"_key --flavor "2C-6GB-20GB" --network "$tag"_network --wait 2> /dev/null)
+            create_server_output=$(openstack server create --image "Ubuntu 20.04 Focal Fossa x86_64"  $name --key-name "$tag"_key --flavor "2C-6GB-20GB" --network "$tag"_network --wait 2> /dev/null)
             display "Currently running dev servers count is $current_server_count which is less then required number $1 created server $name"
+            current_server_count=$(($current_server_count + 1))
         done
         display "starting creation of new config file"
         generate_file 
@@ -147,6 +148,7 @@ create/delete_dev_servers() {
             name=$(grep -m1 -oP "${tag}"'_dev([0-9]+)' <<< $check_servers_list1 )
             delete_server_output=$(openstack server delete $name --wait 2> /dev/null)
             display "Running dev servers count is $current_server_count which is greater then required $1 deleted server $name" 
+            current_server_count=$(($current_server_count - 1))
         done
         # sed -i "/^Host $name$/,/^$/d" $ssh_config_file
         # sed -i "/^$name/d" $hosts_file
@@ -162,6 +164,7 @@ create/delete_dev_servers() {
 openrcfile=$1;
 tag=$2;
 ssh_key=$3;
+privatekey="${ssh_key%.pub}"
 server_count_conf_file="servers.conf"
 ssh_config_file="config"
 hosts_file="hosts"
