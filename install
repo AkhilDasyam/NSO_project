@@ -3,9 +3,10 @@ current_date_time=$(date)
 rc_file=$1
 tag_name=$2
 publickey=$3
+privatekey="${publickey%.pub}"
 required_dev_servers=3
 
-echo "$current_date_time Starting deployment of $tag_name using $rc_file for credentials."
+echo "$current_date_time Starting deployment of $tag_name using $rc_file for credentials."co
 source $rc_file
 
 # Define variables
@@ -103,8 +104,23 @@ fi
 
 
 
-## Create port for Virtual IP
-vip=$(openstack port create --network "$network_name" --fixed-ip subnet="$subnet_name" --no-security-group "$vip_port" )
+## check if Virtual port exists if not , Create port for Virtual IP
+
+existing_vports=$(openstack port list --column Name -f value)
+
+if echo "$existing_vports" | grep -qFx $vip_port; then
+    echo "$(date) $vip_port already exists"
+else
+    vip=$(openstack port create --network "$network_name" --fixed-ip subnet="$subnet_name" --no-security-group "$vip_port" )
+    echo "$(date) Created vip port $vip_port"
+fi 
+#    # Create network
+#    created_network=$(openstack network create --tag "$tag_name" "$network_name" -f json)
+#    echo "$(date) Created network $network_name"
+
+
+
+
 
 unassigned_ips=$(openstack floating ip list --status DOWN -f value -c "Floating IP Address")
 
@@ -113,11 +129,13 @@ existing_servers=$(openstack server list --status ACTIVE --column Name -f value)
 
 if [[ "$existing_servers" == *"$bastion_server"* ]]; then
         echo "$(date) $bastion_server already exists"
+        fip1=$(openstack server show "$tag_name"_bastion -c addresses -f value | awk -F"'" '{print $6}')
 else
    if [[ -n "$unassigned_ips" ]]; then
-        fip1=$(echo "$unassigned_ips" | awk '{print $1}')
+        fip1=$(echo "$unassigned_ips" | sed -n '1p')
         if [[ -n "$fip1" ]]; then
             echo "$(date) Assigned floating ip for bastion server"
+            fip1="$(cat floating_ip1)"
         else
             echo "$(date) Creating floating ip for bastion"
             created_fip1=$(openstack floating ip create ext-net -f json | jq -r '.floating_ip_address' > floating_ip1)
@@ -128,7 +146,7 @@ else
             created_fip1=$(openstack floating ip create ext-net -f json | jq -r '.floating_ip_address' > floating_ip1)
             fip1="$(cat floating_ip1)"
     fi
-    bastion=$(openstack server create --image "Ubuntu 20.04 Focal Fossa 20200423" $bastion_server --key-name $keypair_name --flavor "1C-2GB-50GB" --network $network_name --security-group $security_group_name) 
+    bastion=$(openstack server create --image "Ubuntu 20.04 Focal Fossa x86_64" $bastion_server --key-name $keypair_name --flavor "1C-2GB-50GB" --network $network_name --security-group $security_group_name) 
     add_bastion_fip=$(openstack server add floating ip $bastion_server $fip1) 
     echo "$(date) created $bastion_server server"
 fi
@@ -136,9 +154,10 @@ fi
 
 if [[ "$existing_servers" == *"$haproxy_server"* ]]; then
         echo "$(date) HAproxy already exists"
+        fip2=$(openstack floating ip list --port "$tag_name"_vip --column 'Floating IP Address' | awk 'NR==4 {print $2}')
 else 
     if [[ -n "$unassigned_ips" ]]; then
-        fip2=$(echo "$unassigned_ips" | awk '{print $2}')
+        fip2=$(echo "$unassigned_ips" | sed -n '2p')
         if [[ -n "$fip2" ]]; then
             echo "
             $(date) Created floating ip for HAproxy server (Floating ip for Virtual IP)"
@@ -152,8 +171,8 @@ else
             created_fip2=$(openstack floating ip create ext-net -f json | jq -r '.floating_ip_address' > floating_ip2)
             fip2="$(cat floating_ip2)"
     fi
-    haproxy=$(openstack server create --image "Ubuntu 20.04 Focal Fossa 20200423" $haproxy_server --key-name $keypair_name --flavor "1C-2GB-50GB" --network $network_name --security-group $security_group_name) 
-    haproxy2=$(openstack server create --image "Ubuntu 20.04 Focal Fossa 20200423" $haproxy_server2 --key-name $keypair_name --flavor "1C-2GB-50GB" --network $network_name --security-group $security_group_name) 
+    haproxy=$(openstack server create --image "Ubuntu 20.04 Focal Fossa x86_64" $haproxy_server --key-name $keypair_name --flavor "1C-2GB-50GB" --network $network_name --security-group $security_group_name) 
+    haproxy2=$(openstack server create --image "Ubuntu 20.04 Focal Fossa x86_64" $haproxy_server2 --key-name $keypair_name --flavor "1C-2GB-50GB" --network $network_name --security-group $security_group_name) 
     # add_haproxy_fip=$(openstack server add floating ip $haproxy_server $fip2)
     # add_haproxy2_fip=$(openstack server add floating ip $haproxy_server2 $fip2)
 
@@ -167,7 +186,9 @@ vip_addr=$(openstack port show "$vip_port" -f value -c fixed_ips | grep -Po '\d+
 echo "$vip_addr" >> vipaddr
 
 ## Update vip port with fp pair
-update_port=$(openstack port set --allowed-address ip-address="$fip2" "$vip_port")
+if [ -z "$(openstack port show $vip_port --format json | jq -r '.allowed_address_pairs[] | .ip_address')" ]; then
+    update_port=$(openstack port set --allowed-address ip-address="$fip2" "$vip_port")
+fi
 
 devservers_count=$(grep -ocP $dev_server <<< $existing_servers)
 
@@ -179,7 +200,7 @@ if(($required_dev_servers > $devservers_count)); then
 
     while [ $devservers_to_add -gt 0 ]  
     do    
-        server_output=$(openstack server create --image "Ubuntu 20.04 Focal Fossa 20200423"  $devserver_name --key-name "$keypair_name" --flavor "1C-2GB-50GB" --network $network_name --security-group $security_group_name)
+        server_output=$(openstack server create --image "Ubuntu 20.04 Focal Fossa x86_64"  $devserver_name --key-name "$keypair_name" --flavor "1C-2GB-50GB" --network $network_name --security-group $security_group_name)
         echo "$(date) Created $devserver_name server"
         ((devservers_to_add--))
         
@@ -218,15 +239,16 @@ haproxyfip2=$(openstack server list --name $haproxy_server2 -c Networks -f value
 portid_ha1=$(openstack port list --fixed-ip ip-address="$haproxyfip" -c ID -f value)
 portid_ha2=$(openstack port list --fixed-ip ip-address="$haproxyfip2" -c ID -f value)
 
-update_port1=$(openstack port set --allowed-address ip-address="$vip_addr" "$portid_ha1")
-update_port2=$(openstack port set --allowed-address ip-address="$vip_addr" "$portid_ha2")
-
+if [ -z "$(openstack port show $portid_ha1 --format json | jq -r '.allowed_address_pairs[] | .ip_address')" ]; then
+    update_port1=$(openstack port set --allowed-address ip-address="$vip_addr" "$portid_ha1")
+    update_port2=$(openstack port set --allowed-address ip-address="$vip_addr" "$portid_ha2")
+fi
 
 echo "$(date) Generating config file"
 echo "Host $bastion_server" >> $sshconfig
 echo "   User ubuntu" >> $sshconfig
 echo "   HostName $bastionfip" >> $sshconfig
-echo "   IdentityFile "$PWD"/id_rsa" >> $sshconfig
+echo "   IdentityFile $PWD/$privatekey" >> $sshconfig
 echo "   UserKnownHostsFile /dev/null" >> $sshconfig
 echo "   StrictHostKeyChecking no" >> $sshconfig
 echo "   PasswordAuthentication no" >> $sshconfig
@@ -235,7 +257,7 @@ echo " " >> $sshconfig
 echo "Host $haproxy_server" >> $sshconfig
 echo "   User ubuntu" >> $sshconfig
 echo "   HostName $haproxyfip" >> $sshconfig
-echo "   IdentityFile "$PWD"/id_rsa" >> $sshconfig
+echo "   IdentityFile $PWD/$privatekey" >> $sshconfig
 echo "   StrictHostKeyChecking no" >> $sshconfig
 echo "   PasswordAuthentication no ">> $sshconfig
 echo "   ProxyJump $bastion_server" >> $sshconfig
@@ -244,7 +266,7 @@ echo " " >> $sshconfig
 echo "Host $haproxy_server2" >> $sshconfig
 echo "   User ubuntu" >> $sshconfig
 echo "   HostName $haproxyfip2" >> $sshconfig
-echo "   IdentityFile "$PWD"/id_rsa" >> $sshconfig
+echo "   IdentityFile $PWD/$privatekey" >> $sshconfig
 echo "   StrictHostKeyChecking no" >> $sshconfig
 echo "   PasswordAuthentication no ">> $sshconfig
 echo "   ProxyJump $bastion_server" >> $sshconfig
@@ -270,7 +292,7 @@ for server in $active_servers; do
         echo "Host $server" >> $sshconfig
         echo "   User ubuntu" >> $sshconfig
         echo "   HostName $ip_address" >> $sshconfig
-        echo "   IdentityFile "$PWD"/id_rsa" >> $sshconfig
+        echo "   IdentityFile $PWD/$privatekey" >> $sshconfig
         echo "   UserKnownHostsFile=~/dev/null" >> $sshconfig
         echo "   StrictHostKeyChecking no" >> $sshconfig
         echo "   PasswordAuthentication no" >> $sshconfig
@@ -289,7 +311,7 @@ echo "$haproxy_server2" >> $hostsfile
 echo " " >> $hostsfile
 echo "[all:vars]" >> $hostsfile
 echo "ansible_user=ubuntu" >> $hostsfile
-echo "ansible_ssh_private_key_file="$PWD"/id_rsa" >> $hostsfile
+echo "ansible_ssh_private_key_file= $PWD/$privatekey" >> $hostsfile
 echo "ansible_ssh_common_args=' -F $sshconfig '" >> $hostsfile
 
 echo "$(date) Running ansible playbook"
