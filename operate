@@ -100,6 +100,7 @@ generate_file() {
         
         echo "$server_name" >> $hosts_file
         display "adding $server_name into the new config file"
+
     done
     echo " " >> $hosts_file
     echo "[all:vars]" >> $hosts_file
@@ -134,7 +135,7 @@ create/delete_dev_servers() {
                     break
                 fi
             done
-            create_server_output=$(openstack server create --image "Ubuntu 20.04 Focal Fossa x86_64"  $name --key-name "$tag"_key --flavor "2C-6GB-20GB" --network "$tag"_network --wait 2> /dev/null)
+            create_server_output=$(openstack server create --image "Ubuntu 20.04 Focal Fossa x86_64"  $name --key-name "$tag"_key --flavor "1C-2GB-50GB" --network "$tag"_network --security-group "$tag"_security_group)
             display "Currently running dev servers count is $current_server_count which is less then required number $1 created server $name"
             current_server_count=$(($current_server_count + 1))
         done
