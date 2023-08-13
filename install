@@ -118,7 +118,14 @@ fi
 #    created_network=$(openstack network create --tag "$tag_name" "$network_name" -f json)
 #    echo "$(date) Created network $network_name"
 
+floating_ip_existing=$(openstack floating ip list --status DOWN -f value -c "Floating IP Address")
+# floating_ip_list=(${existing_floating_ip// / })
 
+if [ -n "$floating_ip_existing" ]; then
+  for fip in $floating_ip_existing; do
+    openstack floating ip delete "$fip"
+  done
+fi
 
 
 
