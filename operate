@@ -21,9 +21,9 @@ generate_file() {
         rm "$knownhosts_file"
     fi
     #fip1="$(cat floating_ip_1)"
-    bastionfip=$(openstack server show "$tag"_bastion -f value -c addresses | awk -F"'" '{print $6}')
-    haproxy_ip_1=$(openstack server show "$tag"_HAproxy -f value -c addresses | awk -F"='|,|'" '{print $4}')
-    haproxy_ip_2=$(openstack server show "$tag"_HAproxy2 -f value -c addresses | awk -F"='|,|'" '{print $4}')
+    bastionfip=$(openstack server list --name "$tag"_bastion -c Networks -f value | grep -Po '\d+\.\d+\.\d+\.\d+' | awk 'NR==2')
+    haproxy_ip_1=$(openstack server show "$tag"_HAproxy -c addresses | grep -Po '\d+\.\d+\.\d+\.\d+' | awk 'NR==1')
+    haproxy_ip_2=$(openstack server list --name "$tag"_HAproxy2 -c Networks -f value | grep -Po '\d+\.\d+\.\d+\.\d+' | awk 'NR==1')
 
     echo "$(date) Generating config file"
     echo "Host "$tag"_bastion" >> $ssh_config_file
