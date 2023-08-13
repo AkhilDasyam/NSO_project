@@ -31,10 +31,10 @@ infrastructure components.
 
 # Requirements :
 (Tested in) Ubuntu 22.04.2 LTS 
-python-openstackclient==5.8.0
-ansible-base==2.10.8
-jq-1.6
-pip 22.0.2 (python 3.10)
+python-openstackclient==5.8.0 //
+ansible-base==2.10.8 //
+jq-1.6 //
+pip 22.0.2 (python 3.10) //
 
 # Services :
 Webservers host:
