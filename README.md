@@ -29,6 +29,13 @@ any other network elements created in the cloud platform.
 The clean-up mode ensures a clean state by removing all
 infrastructure components.
 
+# Requirements :
+(Tested in) Ubuntu 22.04.2 LTS 
+python-openstackclient==5.8.0
+ansible-base==2.10.8
+jq-1.6
+pip 22.0.2 (python 3.10)
+
 # Services :
 Webservers host:
 python flask application "service.py" running on port 5000.
@@ -39,3 +46,4 @@ prometheus running on port 9090.
 Grafana running on port 3000.
 Proxy host:
 HAproxy on port 5000
+SNMP running on port 5000
