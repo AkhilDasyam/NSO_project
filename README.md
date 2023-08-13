@@ -30,7 +30,7 @@ The clean-up mode ensures a clean state by removing all
 infrastructure components.
 
 # Requirements :
-(Tested in) Ubuntu 22.04.2 LTS 
+(Tested in) Ubuntu 22.04.2 LTS // 
 python-openstackclient==5.8.0 //
 ansible-base==2.10.8 //
 jq-1.6 //
